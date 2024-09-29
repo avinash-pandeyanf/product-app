@@ -1,0 +1,33 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3 {
+  color: #343a40;
+  text-align: center; /* Center the headings */
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto; /* Center the container */
+  padding: 20px;
+}
+
+/* Center the main content */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+  min-height: 100vh; /* Full height to center vertically */
+}
+
+.product-list {
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: center; /* Center product cards */
+}
