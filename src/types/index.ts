@@ -16,13 +16,8 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
-export interface Cart {
-  items: CartItem[];
-  total: number;
-}
-
-export interface ProductsResponse {
-  products: Product[];
+export interface ApiResponse<T> {
+  products: T[];
   total: number;
   skip: number;
   limit: number;

@@ -3,9 +3,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { Product } from '@/types';
 
-interface ProductState {
-  products: Product[];
-  categories: string[];
+export interface ProductState {
+  items: Product[];
   selectedCategory: string | null;
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
@@ -15,8 +14,7 @@ interface ProductState {
 }
 
 const initialState: ProductState = {
-  products: [],
-  categories: [],
+  items: [],
   selectedCategory: null,
   status: 'idle',
   error: null,
@@ -35,32 +33,39 @@ export const fetchProducts = createAsyncThunk(
     category?: string; 
     search?: string; 
     skip?: number; 
-  }) => {
-    let url = 'https://dummyjson.com/products';
-    if (category) {
-      url += `/category/${category}`;
-    } else if (search) {
-      url += `/search?q=${search}`;
+  } = {}) => {
+    try {
+      let url = 'https://dummyjson.com/products';
+      if (category) {
+        url = `https://dummyjson.com/products/category/${category}`;
+      } else if (search) {
+        url = `https://dummyjson.com/products/search?q=${search}`;
+      } else if (skip > 0) {
+        url = `https://dummyjson.com/products?limit=20&skip=${skip}`;
+      }
+      
+      console.log('Fetching products from:', url);
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Raw API response:', data);
+      
+      if (!data.products || !Array.isArray(data.products)) {
+        console.error('Invalid API response format:', data);
+        throw new Error('Invalid API response format');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw error;
     }
-    if (skip > 0) {
-      url += `${url.includes('?') ? '&' : '?'}skip=${skip}&limit=20`;
-    }
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch products');
-    }
-    return response.json();
-  }
-);
-
-export const fetchCategories = createAsyncThunk(
-  'products/fetchCategories',
-  async () => {
-    const response = await fetch('https://dummyjson.com/products/categories');
-    if (!response.ok) {
-      throw new Error('Failed to fetch categories');
-    }
-    return response.json();
   }
 );
 
@@ -69,43 +74,35 @@ const productSlice = createSlice({
   initialState,
   reducers: {
     resetProducts: (state) => {
-      state.products = [];
-      state.skip = 0;
-      state.total = 0;
+      state.items = [];
+      state.status = 'idle';
+      state.error = null;
     },
-    setSelectedCategory: (state, action: PayloadAction<string>) => {
+    setSelectedCategory: (state, action: PayloadAction<string | null>) => {
       state.selectedCategory = action.payload;
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchProducts.pending, (state) => {
+        console.log('Loading products...');
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
+        console.log('Products loaded successfully:', action.payload);
         state.status = 'succeeded';
-        state.products = state.skip === 0 
-          ? action.payload.products 
-          : [...state.products, ...action.payload.products];
+        state.items = action.payload.products;
         state.total = action.payload.total;
-        state.skip = state.skip + action.payload.limit;
-        state.error = null;
+        state.skip = action.payload.skip;
+        state.limit = action.payload.limit;
+        console.log('Updated state:', { ...state, items: state.items.length + ' items' });
       })
       .addCase(fetchProducts.rejected, (state, action) => {
+        console.error('Failed to load products:', action.error);
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch products';
-      })
-      .addCase(fetchCategories.pending, (state) => {
-        state.status = 'loading';
-      })
-      .addCase(fetchCategories.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.categories = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchCategories.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.error.message || 'Failed to fetch categories';
+        state.items = [];
       });
   },
 });

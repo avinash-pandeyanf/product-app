@@ -13,15 +13,34 @@ import type { AppDispatch, RootState } from '@/redux/store';
 
 export const ProductList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { items, status, error } = useSelector((state: RootState) => state.products);
+  const { items, status, error } = useSelector((state: RootState) => {
+    console.log('Current Redux State:', state);
+    return state.products;
+  });
 
   useEffect(() => {
-    if (items.length === 0) {
-      dispatch(fetchProducts());
-    }
-  }, [dispatch, items.length]);
+    const loadProducts = async () => {
+      try {
+        console.log('Dispatching fetchProducts...');
+        const resultAction = await dispatch(fetchProducts({}));
+        console.log('Dispatch result:', resultAction);
+        
+        if (fetchProducts.fulfilled.match(resultAction)) {
+          console.log('Products fetched successfully:', resultAction.payload);
+        } else if (fetchProducts.rejected.match(resultAction)) {
+          console.error('Failed to fetch products:', resultAction.error);
+        }
+      } catch (error) {
+        console.error('Error in loadProducts:', error);
+      }
+    };
 
-  if (status === 'loading' && items.length === 0) {
+    loadProducts();
+  }, [dispatch]);
+
+  console.log('Rendering ProductList with:', { items: items?.length || 0, status, error });
+
+  if (status === 'loading') {
     return (
       <div className="flex justify-center py-8">
         <Loading size="lg" />
@@ -33,7 +52,16 @@ export const ProductList: React.FC = () => {
     return (
       <div className="text-center py-8">
         <p className="text-red-600 mb-4">{error}</p>
-        <Button onClick={() => dispatch(fetchProducts())}>Retry</Button>
+        <Button onClick={() => dispatch(fetchProducts({}))}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (!items?.length) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600 mb-4">No products found</p>
+        <Button onClick={() => dispatch(fetchProducts({}))}>Refresh Products</Button>
       </div>
     );
   }
@@ -57,23 +85,15 @@ export const ProductList: React.FC = () => {
           </div>
           <div className="p-4">
             <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-              {product.description}
-            </p>
+            <p className="text-gray-600 text-sm mb-4">{product.description}</p>
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-lg font-bold text-primary-600">
-                  ${product.price.toFixed(2)}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Rating: {product.rating}/5
-                </p>
-              </div>
+              <span className="text-xl font-bold">${product.price}</span>
               <Button
-                size="sm"
                 onClick={() => dispatch(addToCart(product))}
+                className="flex items-center space-x-2"
               >
                 <ShoppingCartIcon className="h-5 w-5" />
+                <span>Add to Cart</span>
               </Button>
             </div>
           </div>

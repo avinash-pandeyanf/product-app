@@ -1,22 +1,48 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/common/Button/Button';
 import { Loading } from '@/components/common/Loading/Loading';
-import { fetchProducts, fetchCategories, resetProducts, setSelectedCategory } from '@/redux/slices/productSlice';
+import { fetchProducts, resetProducts, setSelectedCategory } from '@/redux/slices/productSlice';
 import type { RootState, AppDispatch } from '@/redux/store';
+
+const defaultCategories = [
+  'smartphones',
+  'laptops',
+  'fragrances',
+  'skincare',
+  'groceries',
+  'home-decoration',
+  'furniture',
+  'tops',
+  'womens-dresses',
+  'womens-shoes',
+  'mens-shirts',
+  'mens-shoes',
+  'mens-watches',
+  'womens-watches',
+  'womens-bags',
+  'womens-jewellery',
+  'sunglasses',
+  'automotive',
+  'motorcycle',
+  'lighting'
+];
 
 export const CategorySelector: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { categories, selectedCategory, status } = useSelector((state: RootState) => state.products);
+  const { selectedCategory } = useSelector((state: RootState) => state.products);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (categories.length === 0) {
-      dispatch(fetchCategories());
-    }
-  }, [dispatch, categories.length]);
+    // Simulate loading of categories
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleCategorySelect = (category: string) => {
     if (category !== selectedCategory) {
@@ -26,51 +52,42 @@ export const CategorySelector: React.FC = () => {
     }
   };
 
-  if (status === 'loading' && categories.length === 0) {
+  if (isLoading) {
     return (
       <div className="flex justify-center">
-        <Loading size="md" />
-      </div>
-    );
-  }
-
-  if (status === 'failed' && categories.length === 0) {
-    return (
-      <div className="flex flex-col items-center">
-        <p className="text-red-500 mb-2">Failed to load categories</p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => dispatch(fetchCategories())}
-          className="ml-2"
-        >
-          Retry
-        </Button>
+        <Loading size="sm" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 mb-6">
       <AnimatePresence>
-        {categories.map((category: string) => (
-          <motion.div
-            key={category}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap gap-2"
+        >
+          <Button
+            onClick={() => {
+              dispatch(resetProducts());
+              dispatch(setSelectedCategory(null));
+              dispatch(fetchProducts({}));
+            }}
+            className={!selectedCategory ? 'bg-primary-600 text-white' : ''}
           >
+            All Products
+          </Button>
+          {defaultCategories.map((category) => (
             <Button
-              variant={category === selectedCategory ? 'primary' : 'outline'}
-              size="sm"
+              key={category}
               onClick={() => handleCategorySelect(category)}
+              className={selectedCategory === category ? 'bg-primary-600 text-white' : ''}
             >
-              {typeof category === 'string' 
-                ? category.charAt(0).toUpperCase() + category.slice(1)
-                : 'Unknown Category'}
+              {category.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </Button>
-          </motion.div>
-        ))}
+          ))}
+        </motion.div>
       </AnimatePresence>
     </div>
   );
