@@ -1,6 +1,6 @@
 'use client';
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type { Product } from '@/types';
 
 interface ProductState {
@@ -73,7 +73,7 @@ const productSlice = createSlice({
       state.skip = 0;
       state.total = 0;
     },
-    setSelectedCategory: (state, action) => {
+    setSelectedCategory: (state, action: PayloadAction<string>) => {
       state.selectedCategory = action.payload;
     },
   },

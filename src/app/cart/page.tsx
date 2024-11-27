@@ -9,6 +9,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/common/Button/Button';
 import { removeFromCart, updateQuantity, clearCart } from '@/redux/slices/cartSlice';
 import type { AppDispatch, RootState } from '@/redux/store';
+import type { CartItem } from '@/types';
 
 export default function CartPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -30,7 +31,7 @@ export default function CartPage() {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold">Shopping Cart</h1>
       <div className="space-y-4">
-        {items.map((item) => (
+        {items.map((item: CartItem) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, y: 20 }}
